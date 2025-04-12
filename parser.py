@@ -1,25 +1,31 @@
 import requests
-from bs4 import BeautifulSoup
 import csv
-import io
+from io import StringIO
 
 def get_latest_csv():
-    url = "https://www.pais.co.il/777/archive.aspx"
-    headers = {"User-Agent": "Mozilla/5.0"}
+    url = "https://media.pais.co.il/api/pages/777/archive?year=2025"
+    response = requests.get(url)
 
-    session = requests.Session()
-    response = session.get(url, headers=headers)
+    if response.status_code != 200:
+        return "Ошибка при получении данных от API"
 
-    soup = BeautifulSoup(response.content, "html.parser")
-    table = soup.find("table", {"id": "tblArchive"})
+    data = response.json()
 
-    output = io.StringIO()
+    # Проверка структуры
+    if "data" not in data or "table" not in data["data"]:
+        return "Неверный формат данных от API"
+
+    records = data["data"]["table"]["body"]
+
+    output = StringIO()
     writer = csv.writer(output, delimiter=';')
 
-    rows = table.find_all("tr")
-    for row in rows:
-        cells = [cell.get_text(strip=True) for cell in row.find_all(["th", "td"])]
-        if cells:
-            writer.writerow(cells)
+    # Формируем CSV: заголовки + строки
+    for row in records:
+        # row["numbers"] – это список чисел (иногда 17, иногда меньше)
+        numbers = row.get("numbers", [])
+        # Заполним недостающие числа нулями
+        numbers += ["" for _ in range(17 - len(numbers))]
+        writer.writerow(numbers)
 
     return output.getvalue()
