@@ -11,3 +11,6 @@ def home():
 def get_csv():
     csv_data = get_latest_csv()
     return Response(csv_data, mimetype='text/csv')
+
+if __name__ == "__main__":
+    app.run(host="0.0.0.0", port=10000)
