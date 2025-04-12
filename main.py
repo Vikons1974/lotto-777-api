@@ -1,16 +1,18 @@
 from flask import Flask, Response
 from parser import get_latest_csv
+from flask_cors import CORS  # 👈 добавляем
 
 app = Flask(__name__)
+CORS(app)  # 👈 разрешаем CORS для всех маршрутов
 
-@app.route('/')
+@app.route("/")
 def home():
-    return "777 Neo API — работает!"
+    return "Lotto 777 API is running."
 
-@app.route('/777.csv')
+@app.route("/777.csv")
 def get_csv():
-    csv_data = get_latest_csv()
-    return Response(csv_data, mimetype='text/csv')
-
-if __name__ == "__main__":
-    app.run(host="0.0.0.0", port=10000)
+    try:
+        csv_data = get_latest_csv()
+        return Response(csv_data, mimetype="text/csv")
+    except Exception as e:
+        return f"Ошибка при получении CSV: {str(e)}", 500
