@@ -3,29 +3,36 @@ import csv
 from io import StringIO
 
 def get_latest_csv():
-    url = "https://media.pais.co.il/api/pages/777/archive?year=2025"
-    response = requests.get(url)
+    try:
+        url = "https://media.pais.co.il/api/pages/777/archive?year=2025"
+        response = requests.get(url, timeout=10)
 
-    if response.status_code != 200:
-        return "Ошибка при получении данных от API"
+        print("✅ Ответ получен. Код:", response.status_code)
 
-    data = response.json()
+        if response.status_code != 200:
+            return "Ошибка при получении данных от API"
 
-    # Проверка структуры
-    if "data" not in data or "table" not in data["data"]:
-        return "Неверный формат данных от API"
+        data = response.json()
+        print("🔍 Ключи JSON:", list(data.keys()))
 
-    records = data["data"]["table"]["body"]
+        if "data" not in data or "table" not in data["data"]:
+            print("❌ Структура JSON изменилась!")
+            return "Неверный формат данных от API"
 
-    output = StringIO()
-    writer = csv.writer(output, delimiter=';')
+        records = data["data"]["table"]["body"]
+        print(f"📦 Найдено {len(records)} записей")
 
-    # Формируем CSV: заголовки + строки
-    for row in records:
-        # row["numbers"] – это список чисел (иногда 17, иногда меньше)
-        numbers = row.get("numbers", [])
-        # Заполним недостающие числа нулями
-        numbers += ["" for _ in range(17 - len(numbers))]
-        writer.writerow(numbers)
+        output = StringIO()
+        writer = csv.writer(output, delimiter=';')
 
-    return output.getvalue()
+        for row in records:
+            numbers = row.get("numbers", [])
+            numbers += ["" for _ in range(17 - len(numbers))]  # Заполнение до 17 чисел
+            writer.writerow(numbers)
+
+        print("✅ CSV успешно сформирован")
+        return output.getvalue()
+
+    except Exception as e:
+        print("🔥 Ошибка:", str(e))
+        return f"Ошибка: {str(e)}"
